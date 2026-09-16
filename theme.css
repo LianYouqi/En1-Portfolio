@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&display=swap');
+
 /* ============================================================ */
 /* Site theme — shared colors, fonts, and sizes                 */
 /*                                                                */
@@ -9,23 +11,25 @@
 
 :root {
     /* Brand colors */
-    --color-primary: #4a7a6e;       /* deep teal-green: headers, nav, links */
-    --color-primary-dark: #35594f;  /* darker teal: hover/active states */
-    --color-accent: #e0a66a;        /* warm orange: cards, highlights */
-    --color-accent-dark: #c98a49;   /* darker orange: hover states */
+    --color-primary: #8B5E3C;       /* links/default clickable brown */
+    --color-primary-dark: #5C3A21;  /* hover/darker brown */
+    --color-accent: #A9744F;        /* warm caramel brown for buttons/clickables */
+    --color-accent-dark: #7A4E2D;   /* deeper roasted brown hover */
 
     /* Text */
-    --color-text: #2d2420;          /* main body text */
-    --color-text-muted: #4d3a2c;    /* secondary text, links on light bg */
-    --color-text-on-dark: #ffffff;  /* text placed over photos/dark overlays */
+    --color-text: #3E2C23;          /* main body text */
+    --color-text-muted: #6B5346;    /* secondary text, captions */
+    --color-text-on-dark: #FAF6F1;  /* warm off-white text on dark overlays */
 
     /* Backgrounds */
-    --color-bg-page: #f4f4f4;       /* page background on activity/project pages */
-    --color-bg-card: #ffffff;       /* white card/container background */
-    --color-bg-overlay: rgba(74, 122, 110, 0.5); /* translucent header/hero overlay */
+    --color-bg-page: #FAF6F1;       /* warm off-white page background */
+    --color-bg-card: #FFFFFF;       /* white card/container background */
+    --color-bg-overlay: rgba(139, 94, 60, 0.18); /* translucent warm brown overlay */
+    --color-border: #C8A98A;        /* soft tan borders */
+    --color-border-focus: #8B5E3C;  /* focus border brown */
 
     /* Typography */
-    --font-body: Arial, Helvetica, sans-serif;
+    --font-body: 'EB Garamond', Georgia, serif;
 
     /* Shape */
     --radius: 10px;
