@@ -10,28 +10,35 @@
 /* ============================================================ */
 
 :root {
-    /* Brand colors */
-    --color-primary: #8B5E3C;       /* links/default clickable brown */
-    --color-primary-dark: #5C3A21;  /* hover/darker brown */
-    --color-accent: #A9744F;        /* warm caramel brown for buttons/clickables */
-    --color-accent-dark: #7A4E2D;   /* deeper roasted brown hover */
+    /* Main brand colors */
+    --color-primary: #0F5368;        /* deep teal for major UI areas */
+    --color-primary-dark: #123F50;   /* dark teal for stronger contrast */
+    --color-secondary: #173F55;      /* dark navy-blue for headers and strong panels */
+    --color-secondary-soft: #527487; /* muted blue-gray */
+    --color-surface: #DDE9EC;        /* soft blue-gray surfaces */
+    --color-surface-alt: #F7F1E3;   /* warm ivory supporting surfaces */
+    --color-accent: #D6B36A;         /* champagne gold accent */
+    --color-accent-dark: #B88F4A;    /* darker gold for hover/focus */
 
     /* Text */
-    --color-text: #3E2C23;          /* main body text */
-    --color-text-muted: #6B5346;    /* secondary text, captions */
-    --color-text-on-dark: #FAF6F1;  /* warm off-white text on dark overlays */
+    --color-text: #173F55;           /* navy for readable text on light surfaces */
+    --color-text-muted: #527487;     /* muted blue-gray for secondary text */
+    --color-text-on-dark: #F3E4C3;  /* warm cream for text on dark backgrounds */
+    --color-text-on-accent: #173F55; /* dark navy text on gold areas */
 
     /* Backgrounds */
-    --color-bg-page: #FAF6F1;       /* warm off-white page background */
-    --color-bg-card: #FFFFFF;       /* white card/container background */
-    --color-bg-overlay: rgba(139, 94, 60, 0.18); /* translucent warm brown overlay */
-    --color-border: #C8A98A;        /* soft tan borders */
-    --color-border-focus: #8B5E3C;  /* focus border brown */
+    --color-bg-page: #E7EEF0;        /* cool light background for the site */
+    --color-bg-card: #F4F5F2;       /* soft light card background */
+    --color-bg-panel: #BFCED4;      /* muted blue-gray panels */
+    --color-bg-overlay: rgba(18, 63, 80, 0.58); /* dark teal overlay */
+    --color-border: #8FA8B0;         /* blue-gray border */
+    --color-border-strong: #D6B36A;  /* gold accent border */
+    --color-border-focus: #0F5368;   /* primary teal focus ring */
 
     /* Typography */
     --font-body: 'EB Garamond', Georgia, serif;
 
     /* Shape */
-    --radius: 10px;
+    --radius: 12px;
     --container-max: 800px;
 }
