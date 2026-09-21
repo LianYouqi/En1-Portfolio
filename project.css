@@ -98,6 +98,36 @@ body {
     color: var(--color-text);
 }
 
+.proj-layout {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    align-items: start;
+}
+
+.proj-layout > * {
+    min-width: 0;
+}
+
+.proj-layout .proj-desc {
+    margin: 0;
+}
+
+.proj-layout .proj-gallery {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 0;
+    width: 100%;
+}
+
+.proj-layout .proj-gallery img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    display: block;
+}
+
 /* Optional block: a labeled code sample. Delete this block on pages   */
 /* that don't involve code (e.g. a build or design activity).          */
 .proj-code {
@@ -184,7 +214,15 @@ pre code, pre code {
         font-size: 1.3em;
     }
 
+    .proj-layout {
+        grid-template-columns: 1fr;
+    }
+
     .proj-gallery img {
         height: 120px;
+    }
+
+    .proj-layout .proj-gallery img {
+        height: auto;
     }
 }
