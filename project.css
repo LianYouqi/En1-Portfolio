@@ -96,6 +96,15 @@ body {
 
 .proj-desc p {
     color: var(--color-text);
+    margin: 0.2rem 0;
+}
+
+.proj-desc h2,
+.proj-desc h3,
+.proj-desc h4,
+.proj-desc h5,
+.proj-desc h6 {
+    margin: 0.9rem 0 0.2rem;
 }
 
 .proj-layout {
