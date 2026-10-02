@@ -311,3 +311,31 @@ pre code, pre code {
         height: auto;
     }
 }
+
+/* Project description styles */
+.proj-desc .at-a-glance {
+    background: #f4f6f8;
+    border-left: 4px solid #3b6ea5;
+    padding: 0.5rem 1rem;
+    margin: 1rem 0;
+}
+
+.proj-desc .at-a-glance p {
+    margin: 0.4rem 0;
+}
+
+.proj-desc .gear-table {
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+.proj-desc .gear-table th,
+.proj-desc .gear-table td {
+    border: 1px solid #ccc;
+    padding: 0.4rem 0.8rem;
+    text-align: left;
+}
+
+.proj-desc .gear-table th {
+    background: #f4f6f8;
+}
