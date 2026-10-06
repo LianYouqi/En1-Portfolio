@@ -1,29 +1,210 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project 6: Simple Cars</title>
     <link rel="stylesheet" href="./project.css">
 </head>
 <body>
 
+    <!-- Header and Navigation Section -->
     <header class="header">
         <nav class="navbar">
             <a href="./index.html" class="active">Home</a>
         </nav>
     </header>
 
+    <!-- Project Information -->
     <div class="proj-container">
+
         <h1 class="proj-header">Project Portfolio</h1>
-        <h2 class="proj-header">Project 6: Simple Cars</h2>
 
         <div class="proj-img-container">
             <img src="./projectimages/Project%2006%20Simple%20Car/Simple%20Car.jpeg" alt="Simple car project">
         </div>
 
+        <h2 class="proj-header">Project 6: Simple Cars</h2>
+
+        <!-- Written Section -->
         <div class="proj-desc">
-            <p>[Add the project goal, how you built the car, and what you learned.]</p>
+
+            <div class="at-a-glance">
+                <p><strong>At a glance</strong></p>
+                <p><strong>Goal:</strong> Design and build a simple car using as few parts as possible, then redesign it to draw a perfect square.</p>
+                <p><strong>Result:</strong> The car moved forward and backward, rotated in place, and moved in arcs. The redesigned car, with a pen placed between its wheels, drew a square.</p>
+                <p><strong>Key takeaway:</strong> Placing the pen between the wheels let the existing rotation function stay the same, so the redesign changed the car instead of the code.</p>
+            </div>
+
+            <h3>Part 1: The Simple Car</h3>
+            <p>
+                For the first part of this project, I designed and built a simple car using as few parts as possible.
+                I programmed it to move forward and backward at slow and fast speeds, rotate in place clockwise and
+                counterclockwise, and move in small and large arcs. <em>(see Demo Video 1)</em>
+            </p>
+
+            <h3>Part 2: Redesigned Simple Car, Drawing a Perfect Square</h3>
+
+            <h4>The Problem</h4>
+            <p>
+                For the second part of the project, I attached a pen to the simple car and used its functions to draw
+                a perfect square. I realized that the car needed to be redesigned. If the pen were attached elsewhere
+                on the car, I would have needed to program the car to rotate around the pen. The forward movement
+                functions did not need to change; the rotation did.
+            </p>
+
+            <h4>The Redesign</h4>
+            <p>
+                Instead of reprogramming the rotation function to pivot around the marker, I redesigned the car by
+                placing the pen between the two wheels. This meant the existing rotation function could stay the same,
+                because the car already rotated around a point between its wheels. <em>(see Final Design)</em>
+            </p>
+
+            <h4>Keeping the Pen Centered</h4>
+            <p>
+                One challenge was keeping the pen exactly between the two wheels. I used a rubber-band arrangement
+                to hold it in place and used building-block panels as an anchor rather than attaching the pen directly
+                to a smooth surface. I still had to adjust the panel. It is not perfectly centered because the tip of
+                the marker is not centered on the pen itself. <em>(see Result and Demo Video 2)</em>
+            </p>
         </div>
+
+        <!-- Demos and Photos -->
+        <div class="proj-desc">
+            <h3>Demo Video 1: Simple Car</h3>
+        </div>
+        <div class="proj-video-container">
+            <iframe src="https://www.youtube.com/embed/RE5IvJJu2Bg" title="Simple car project video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+
+        <div class="proj-desc">
+            <h3>Final Design</h3>
+        </div>
+        <div class="proj-img-container">
+            <img src="./projectimages/Project%2006%20Simple%20Car/Final%20Design.jpeg" alt="Redesigned simple car with a marker held between its wheels">
+        </div>
+
+        <div class="proj-desc">
+            <h3>Result</h3>
+        </div>
+        <div class="proj-img-container">
+            <img src="./projectimages/Project%2006%20Simple%20Car/Result.jpeg" alt="Square drawn by the redesigned simple car">
+        </div>
+
+        <div class="proj-desc">
+            <h3>Demo Video 2: Drawing a Perfect Square</h3>
+        </div>
+        <div class="proj-video-container">
+            <iframe src="https://www.youtube.com/embed/K33malAcQkw" title="Drawing a perfect square video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+
+        <div class="proj-code">
+            <h3>Code: Drawing a Perfect Square</h3>
+            <pre><code># Setup: left wheel motor on port D, right wheel motor on port C.
+from hub import port, motion_sensor
+import runloop
+import motor_pair
+
+# Measure your wheel diameter and update this value if needed.
+WHEEL_DIAMETER_CM = 5.6
+SQUARE_SIDE_CM = 10
+
+# Speeds are in motor degrees per second; run_time is in milliseconds.
+run_time = 2000
+SLOW_SPEED = 125
+FAST_SPEED = 1000
+TURN_SPEED = 150
+
+# Convert travel distance into the wheel rotation needed to cover it.
+def distance_to_motor_degrees(distance_cm):
+    wheel_circumference_cm = WHEEL_DIAMETER_CM * 3.14
+    return int(distance_cm / wheel_circumference_cm * 360)
+
+# Each straight-driving function takes a positive distance in centimeters.
+async def move_forward_slow(distance_cm):
+    wheel_degrees = distance_to_motor_degrees(distance_cm)
+    await motor_pair.move_for_degrees(
+        motor_pair.PAIR_1, wheel_degrees, 0, velocity=SLOW_SPEED
+    )
+
+async def move_forward_fast(distance_cm):
+    wheel_degrees = distance_to_motor_degrees(distance_cm)
+    await motor_pair.move_for_degrees(
+        motor_pair.PAIR_1, wheel_degrees, 0, velocity=FAST_SPEED
+    )
+
+async def move_backward_slow(distance_cm):
+    wheel_degrees = distance_to_motor_degrees(distance_cm)
+    await motor_pair.move_for_degrees(
+        motor_pair.PAIR_1, -wheel_degrees, 0, velocity=SLOW_SPEED
+    )
+
+async def move_backward_fast(distance_cm):
+    wheel_degrees = distance_to_motor_degrees(distance_cm)
+    await motor_pair.move_for_degrees(
+        motor_pair.PAIR_1, -wheel_degrees, 0, velocity=FAST_SPEED
+    )
+
+async def spin_cc(angle):
+    # Yaw is measured in tenths of a degree.
+    target_yaw = abs(angle) * 10
+    motion_sensor.reset_yaw(0)
+    await runloop.sleep_ms(100)
+
+    # Opposite wheel speeds rotate the car in place.
+    motor_pair.move_tank(motor_pair.PAIR_1, -TURN_SPEED, TURN_SPEED)
+
+    while abs(motion_sensor.tilt_angles()[0]) &lt; target_yaw:
+        await runloop.sleep_ms(5)
+
+    motor_pair.stop(motor_pair.PAIR_1)
+
+async def spin_c(angle):
+    target_yaw = abs(angle) * 10
+    motion_sensor.reset_yaw(0)
+    await runloop.sleep_ms(100)
+
+    motor_pair.move_tank(motor_pair.PAIR_1, TURN_SPEED, -TURN_SPEED)
+
+    while abs(motion_sensor.tilt_angles()[0]) &lt; target_yaw:
+        await runloop.sleep_ms(5)
+
+    motor_pair.stop(motor_pair.PAIR_1)
+
+# These arc functions remain time-based.
+async def small_arc():
+    await motor_pair.move_for_time(
+        motor_pair.PAIR_1, run_time, 70, velocity=FAST_SPEED
+    )
+
+async def big_arc():
+    await motor_pair.move_for_time(
+        motor_pair.PAIR_1, run_time, 30, velocity=FAST_SPEED
+    )
+
+async def draw_square():
+    # Draw four equal sides, turning between them.
+    for side in range(4):
+        await move_forward_slow(SQUARE_SIDE_CM)
+        if side &lt; 3:
+            await spin_c(90)
+
+
+async def main():
+    # Pair the left motor first and the right motor second.
+    motor_pair.pair(motor_pair.PAIR_1, port.D, port.C)
+
+    # Draw the square. To test one move instead, replace this call.
+    await draw_square()
+
+    # Free the motor ports when the drawing is finished.
+    motor_pair.unpair(motor_pair.PAIR_1)
+
+runloop.run(main())</code></pre>
+        </div>
+
     </div>
+    <!-- End Project Information -->
 
 </body>
 </html>
