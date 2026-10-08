@@ -21,14 +21,72 @@
         <h1 class="proj-header">Project Portfolio</h1>
 
         <div class="proj-img-container">
-            <img src="./images/Background.jpg" alt="Portfolio header background image">
+            <img src="./projectimages/activity04/Programming with Sensors.jpeg" alt="Programming with sensors activity photo" style="max-width: 500px; width: 100%; height: auto; display: block; margin: 0 auto;">
         </div>
 
         <h2 class="proj-header">Activity 4: Programming with Sensors</h2>
 
         <div class="proj-desc">
-            <p>This activity focused on programming with sensors. It introduced how code can respond to changing conditions in the environment and how robot behavior can be adjusted based on sensor input.</p>
-            <p>Using sensor-based programming, the goal was to connect code to physical feedback so a robot or system could react in a controlled and intentional way. The activity highlighted how small changes in programming can change how a system responds.</p>
+            <p><strong>Goal:</strong> Write and test code that reads an input and controls an output motor.</p>
+            <p><strong>Input:</strong> The angle of one motor (the handle).</p>
+            <p><strong>Output:</strong> The speed and direction of a second motor.</p>
+            <p>Worked with Evan Burns</p>
+            <p>
+                We were assigned one motor as the input and another motor as the output. Evan Burns and I decided to
+                replicate the MTA subway speed control. We used the angle of one motor as the input. The more it turned
+                clockwise or counterclockwise, the faster the other motor rotated. The direction of the other motor also
+                corresponds to the way the handle is turned.
+            </p>
+
+            <h3>Code</h3>
+        </div>
+
+        <div class="proj-code">
+<pre><code># Setup: Input motor on port C; output motor on port D.
+from hub import port
+import runloop
+import motor
+
+# Turning C this far gives D its maximum speed.
+FULL_SPEED_TURN_DEGREES = 90
+
+# Maximum speed for a Large motor, in degrees per second.
+# If D is a Small or Medium motor, use its supported maximum instead.
+MAX_OUTPUT_SPEED = 2000
+
+async def main():
+    # Treat motor C's current position as the stop position.
+    motor.reset_relative_position(port.C, 0)
+
+    # Continuously match motor D's speed to motor C's position.
+    while True:
+        input_degrees = motor.relative_position(port.C)
+
+        # Limit the input to 90 degrees in either direction.
+        if input_degrees &gt; FULL_SPEED_TURN_DEGREES:
+            input_degrees = FULL_SPEED_TURN_DEGREES
+        elif input_degrees &lt; -FULL_SPEED_TURN_DEGREES:
+            input_degrees = -FULL_SPEED_TURN_DEGREES
+
+        # Positive and negative positions produce opposite directions.
+        output_speed = int(
+            input_degrees * MAX_OUTPUT_SPEED / FULL_SPEED_TURN_DEGREES
+        )
+
+        # Stop at the starting position; otherwise update D's speed.
+        if output_speed == 0:
+            motor.stop(port.D)
+        else:
+            motor.run(port.D, output_speed)
+
+        # Allow the hub to check the input again shortly.
+        await runloop.sleep_ms(20)
+
+runloop.run(main())</code></pre>
+        </div>
+
+        <div class="proj-video-container">
+            <iframe src="https://www.youtube.com/embed/HpnNoTwRmmM" title="Activity 4 sensor programming video" allowfullscreen></iframe>
         </div>
 
     </div>
