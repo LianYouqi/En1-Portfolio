@@ -27,7 +27,62 @@
         <h2 class="proj-header">Project 8: Astronaut Tools</h2>
 
         <div class="proj-desc">
-            <p>This project page is for the Astronaut Tools project. More details will be added here as the work is documented.</p>
+            <p>Description of this project: The goal of this project is to design
+                a tool that can screw and unscrew bolts off of a screw. The twist is that
+                the tool must be able to work in a zero-gravity environment. Some of the
+                constraints outlined by the class includes working with gloves, the bolts
+                must be able to be held by the tool, and it can work upside down
+                (to micmic the conditions in space)
+
+
+                My initial design were to construct a contraption that uses rubber bands 
+                as a way to unscrew the bolts. The reason for this is that the bolts are 
+                shaped hexagonal and the rubber bands can be stretched to fit around the bolts.
+                The speed at which the rubber bands spins can also be adjusted with gear ratios.
+                I went through two iterations of this idea.
+
+                [picture of first iteration]
+                At this point, I wanted to try to increase the speed by increasing the 
+                gear ratios because my design weren't that fast compared to the other designs
+                I've seen from my classmates
+
+                [picture of second iteration]
+                I found that it was challenging to implement gear ratios for the first iteration.
+                So, I changed the design with two motors on one side of the tool. My thoughts were that
+                I've effectively doubled the torque, and this configuration will be easier to implement
+                the gear ratios that I wanted. 
+                It did not work out as I expected, and I could not bulid the highest possible gear ratio
+                that I had in mind. Even then, I've found that the bolts were continuously screwed on or off
+                the bolt when I recorded in slow-motion. This was actually the issue that I wanted
+                to avoid in the first place, because I thought I could apply tension to the string to
+                unscrew the nut in a continuous motion. 
+
+                Another problem that I didn't consider yet was how to implement a way to hold the bolt
+                in place after the tool unscrews the bolt as per the instructions of this project. In short,
+                I moved on to another iteration because implementing a way to hold the bolt wasn't feasible
+                with my current design. Also, the unscrewing procress was not effective.
+
+                Which leads to my third iteration. At this point, despite not wanting to take 'inspiration'
+                from my classmates, I decided to make drill-like design with four lego supports as both
+                a way to screw and hold the bolt. I obviously added in my own touch: two motors that provide
+                extra torque, and high gear ratios.
+
+                The construction of the gear ratios were the hardest part of this iteraiton because my design were to transfer
+                the motion of the gears between axes in different directions. I've used
+                lego parts that you mainly associate with buliding models in order to get the alignment right,
+                as well as rubber bands to hold the gears in place. 
+                The increments that these lego pieces were designed in weren't ideal for this iteration.
+
+                Time it took for all two nuts to unscrew and screw onto another screw:
+
+
+                [Code here]
+
+                [Video here]
+
+                
+                
+            </p>
         </div>
 
     </div>
