@@ -117,10 +117,67 @@
             </p>
 
             <h3>Results</h3>
-            <p>
-                Time it took for both nuts to unscrew and screw onto another screw:
-            </p>
             <!-- Add your timing results here -->
+        </div>
+
+        <div class="proj-desc">
+            <h3>Video Demonstration</h3>
+        </div>
+        <div class="proj-video-container">
+            <iframe src="https://www.youtube.com/embed/-XEpAmkhc38" title="Astronaut tools demonstration" allowfullscreen></iframe>
+        </div>
+
+        <div class="proj-code">
+            <h3>Force Sensor Motor Control Code</h3>
+            <pre><code># Setup: medium motors on ports A and E; Force Sensor on port C.
+
+from hub import port
+import runloop
+import motor
+import force_sensor
+
+# Motor speed is in degrees per second.
+SPEED = 1110
+
+# Force readings are in decinewtons: 60 = 6 N; 80 = 8 N.
+FORCE_THRESHOLD = 60
+STOP_MOTOR_THRESHOLD = 80
+
+async def main():
+    direction = 1
+
+    while True:
+        # Wait for the sensor to be fully released before accepting a start press.
+        print("Release sensor to 0")
+        while force_sensor.force(port.C) != 0:
+            await runloop.sleep_ms(20)
+
+        # Wait for a press that reaches the start threshold.
+        print("Waiting to start")
+        while force_sensor.force(port.C) &lt; FORCE_THRESHOLD:
+            await runloop.sleep_ms(20)
+
+        # Start both motors with the same direction command.
+        motor.run(port.A, SPEED * direction)
+        motor.run(port.E, SPEED * direction)
+        print("Motors started")
+
+        # Wait for the start press to be released before accepting a stop press.
+        while force_sensor.force(port.C) != 0:
+            await runloop.sleep_ms(20)
+
+        # Keep running until the stop threshold is reached.
+        while force_sensor.force(port.C) &lt; STOP_MOTOR_THRESHOLD:
+            await runloop.sleep_ms(20)
+
+        # Stop both motors and reverse their direction for the next start.
+        motor.stop(port.A)
+        motor.stop(port.E)
+        print("Motors stopped")
+        direction = -direction
+
+# Start the program.
+runloop.run(main())</code></pre>
         </div>
 
     </div>
