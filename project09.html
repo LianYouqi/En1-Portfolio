@@ -3,26 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project 9: Details Needed</title>
+    <title>Project 9: Robotic Arm</title>
     <link rel="stylesheet" href="./project.css">
 </head>
 <body>
 
+    <!-- Header and Navigation Section -->
     <header class="header">
         <nav class="navbar">
             <a href="./index.html" class="active">Home</a>
         </nav>
     </header>
 
+    <!-- Project Information -->
     <div class="proj-container">
+
         <h1 class="proj-header">Project Portfolio</h1>
 
-        <h2 class="proj-header">Project 9: Details Needed</h2>
+        <!-- Add a hero image of the finished arm here, like your other project pages -->
+
+        <h2 class="proj-header">Project 9: Robotic Arm</h2>
 
         <div class="proj-desc">
-            <p>This is a starter page. Add the project title and details here when they are available.</p>
+            <p><em>June 2024</em></p>
+
+            <div class="at-a-glance">
+                <p><strong>At a glance</strong></p>
+                <p><strong>Goal:</strong> Design an autonomous robotic arm capable of transporting a ping-pong ball from one place to another.</p>
+                <p><strong>Result:</strong> A crane-like claw captures the ping-pong ball, and the arm repeats a color-triggered sequence of lowering, rotating, lifting, and rotating back.</p>
+                <p><strong>Key takeaway:</strong> Gears of the same size did not attach nicely in the LEGO set, which pushed me to a second claw design that worked surprisingly well.</p>
+            </div>
+
+            <h3>The Challenge</h3>
+            <p>
+                Design an autonomous robotic arm capable of transporting a ping-pong ball from one place to another.
+            </p>
+            <p>
+                <strong>Constraints:</strong> Movement is triggered by the ball being placed on the color sensor, and the arm
+                returns to its initial position to wait for a new ball trigger.
+            </p>
+
+            <h3>Design Process</h3>
+
+            <h4>Attempt 1: Two connected gears</h4>
+            <p>
+                My initial approach was using claws to grip the ping-pong ball, and a motor that spins or lifts the
+                ball as the means of transport. I focused on designing the claw because that seemed to be the most
+                challenging part of the project. My initial idea was to use two gears connected to each other, but
+                gears of the same size aren't designed to be attached nicely to each other on the LEGO set. I could
+                use one 28-tooth gear and one 36-tooth gear, but that looked ugly.
+            </p>
+
+            <h4>Attempt 2: Crane-like claw</h4>
+            <p>
+                My second attempt actually worked surprisingly well. [this part] and [the crane-like claw]
+                perfectly captured the ping-pong ball. With enough downward velocity, it shifts the ping-pong ball
+                into a nice position.
+            </p>
+
+            <h3>Programming</h3>
+            <p>
+                From then on, my focus shifted to refining the programming of the robotic arm's behavior.
+                There are five steps:
+            </p>
+            <ol>
+                <li>Detect color change.</li>
+                <li>Lower the arm to grip the ball.</li>
+                <li>Rotate 180&deg; counterclockwise.</li>
+                <li>Lift the arm to release the ball.</li>
+                <li>Rotate 180&deg; clockwise.</li>
+            </ol>
+            <p>
+                Then the sequence repeats.
+            </p>
+
+            <h3>Demo Video</h3>
         </div>
+
+        <div class="proj-video-container">
+            <iframe src="https://www.youtube.com/embed/6TO2EmGsJUA" title="Robotic arm demonstration" allowfullscreen></iframe>
+        </div>
+
+        <div class="proj-code">
+            <h3>Color Sensor Robotic Arm Code</h3>
+            <pre><code># Setup: Color Sensor on E, large motor on F,
+# medium lift motors on D and B.
+from hub import port
+import runloop
+import color
+import color_sensor
+import motor
+import motor_pair
+
+# Speeds are in degrees per second; angles are in motor degrees.
+LARGE_MOTOR_INITIAL_SPEED = 180
+LARGE_MOTOR_RETURN_SPEED = 180
+LIFT_SPEED = 1050
+LOWER_SPEED = 1050
+LIFT_ANGLE = 550
+
+async def spin_large_motor(speed, direction):
+    # Choose the direction for the large motor's 180-degree turn.
+    if direction == "clockwise":
+        motor_degrees = 180
+    else:
+        motor_degrees = -180
+
+    await motor.run_for_degrees(port.F, motor_degrees, speed)
+
+async def lift(speed, angle):
+    # Pair the lift motors, complete the move, then free their ports.
+    motor_pair.pair(motor_pair.PAIR_1, port.D, port.B)
+    await motor_pair.move_tank_for_degrees(
+        motor_pair.PAIR_1, angle, speed, speed
+    )
+    motor_pair.unpair(motor_pair.PAIR_1)
+
+async def lower(speed, angle):
+    # Pair the lift motors, complete the move, then free their ports.
+    motor_pair.pair(motor_pair.PAIR_1, port.D, port.B)
+    await motor_pair.move_tank_for_degrees(
+        motor_pair.PAIR_1, angle, -speed, -speed
+    )
+    motor_pair.unpair(motor_pair.PAIR_1)
+
+async def main():
+    # Remember the color present when the program starts.
+    previous_color = color_sensor.color(port.E)
+
+    while True:
+        # Check for one new recognized color.
+        current_color = color_sensor.color(port.E)
+
+        if current_color != color.UNKNOWN and current_color != previous_color:
+            print("New color detected:", current_color)
+
+            # Finish every step before checking the sensor again.
+            await runloop.sleep_ms(1000)
+            await lower(LOWER_SPEED, LIFT_ANGLE)
+            await spin_large_motor(LARGE_MOTOR_INITIAL_SPEED, "counterclockwise")
+            await lift(LIFT_SPEED, LIFT_ANGLE)
+            await spin_large_motor(LARGE_MOTOR_RETURN_SPEED, "clockwise")
+
+            # Treat the color present after the sequence as the new reference.
+            # This prevents a change during movement from triggering another run.
+            previous_color = color_sensor.color(port.E)
+
+        # Pause briefly between sensor checks.
+        await runloop.sleep_ms(50)
+
+runloop.run(main())</code></pre>
+        </div>
+
     </div>
+    <!-- End Project Information -->
 
 </body>
 </html>
