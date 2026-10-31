@@ -20,17 +20,19 @@
 
         <h1 class="proj-header">Project Portfolio</h1>
 
-        <!-- Add a hero image of the finished haunted house project here, like your other project pages -->
+        <div class="proj-img-container">
+            <img src="./projectimages/project10%20Haunted%20House/Final%20Design.jpg" alt="Final design of the haunted house project">
+        </div>
 
         <h2 class="proj-header">Project 10: Haunted House</h2>
 
         <div class="proj-desc">
+            <p><em>October 30, 2026</em></p>
 
             <div class="at-a-glance">
                 <p><strong>At a glance</strong></p>
                 <p><strong>Goal:</strong> Create an interactive Halloween haunted house feature.</p>
                 <p><strong>Result:</strong> A bait-scare contraption that uses hub-to-hub communication, with a light-up toy skull as the scare.</p>
-                <p><strong>Key takeaway:</strong> Balloons were not repeatable and the motors' torque was not strong enough for the rotating plates, which led to the light-up skull.</p>
             </div>
 
             <h3>Prepping for the Haunted House</h3>
@@ -39,51 +41,80 @@
                 Hub-to-Hub Communication. I chose Cardboard and Craft Creations.
             </p>
 
-            <!-- Add your coffin photo here:
-            <div class="proj-img-container">
-                <img src="./projectimages/..." alt="Cardboard coffin design">
-                <p><em>Coffin design</em></p>
-            </div>
-            -->
-
             <p>
-                I designed a coffin. I ran out of class time to attach the hinges.
+                I designed a coffin, but I ran out of class time to attach the hinges.
             </p>
 
             <h3>The Challenge</h3>
             <p>
-                For our haunted house project, we built a bait-scare contraption. I worked with Isaac and Kerem.
+                For our haunted house project, we were tasked with building an interactive feature that was part of
+                Tufts' annual Haunted House on October 30, 2026.
             </p>
 
             <h3>Design Process</h3>
 
             <h4>The concept: Bait and hub-to-hub communication</h4>
             <p>
-                Our initial ideas were to use some sort of bait, and we would use hub-to-hub communication to
-                broadcast a signal to another hub (Hub B) that would act as the main hub for our scaring mechanism.
+                Our initial idea was to use some sort of bait, and we would use hub-to-hub communication to
+                broadcast a signal to another hub (Hub B) that would act as our main scaring mechanism.
             </p>
+        </div>
 
-            <h4>Idea 1: Balloons</h4>
+        <div class="proj-split">
+            <div class="proj-img-container">
+                <img src="./projectimages/project10%20Haunted%20House/Individal%20Part%201.jpg" alt="Haunted house individual part 1">
+                <p><em>Individual Part 1</em></p>
+            </div>
+
+            <div class="proj-img-container">
+                <img src="./projectimages/project10%20Haunted%20House/Individual%20Part%202.jpg" alt="Haunted house individual part 2">
+                <p><em>Individual Part 2</em></p>
+            </div>
+        </div>
+
+        <div class="proj-desc">
+            <h4>Ideas we thought about</h4>
             <p>
-                We thought about using balloons, but they were not repeatable.
+                We thought about using balloons and constructing a mechanism for Hub B to pop it. The idea was scrapped
+                because it required reloading.
             </p>
-
-            <h4>Idea 2: Rotating plates</h4>
             <p>
-                We also thought about using two plates to rotate, slamming against each other to make a crackle
-                (the motors' torque wasn't strong enough).
+                We also tried to find an alternative to balloons using plates and having them slam against each other.
+                That idea was also scrapped. The noise wasn't loud, and the motor's torque was not strong enough.
+            </p>
+            <p>
+                It was hard finding an idea we all agreed upon. In the end, we just wanted to build a prototype that
+                works and scale up from there via hub-to-hub communication.
             </p>
 
             <h4>Final design: Light-up toy skull</h4>
             <p>
-                Eventually, we settled on using one of the toy skulls that light up.
+                Eventually, we settled on using one of the toy skulls that light up. Hub A broadcasts a signal once
+                someone takes the bait. Once Hub B receives the signal, it opens up the gates and the skull gets
+                activated.
+            </p>
+        </div>
+
+        <div class="proj-img-container">
+            <img src="./projectimages/project10%20Haunted%20House/Final%20Design%20running.jpg" alt="Haunted house final design shown running">
+            <p><em>Final design running</em></p>
+        </div>
+
+        <div class="proj-desc">
+            <h3>Reflection</h3>
+            <p>
+                We didn't have time to scale up our design because we had trouble concealing the skull. Our design
+                with the gates could have been thought out better.
+            </p>
+            <p>
+                Other ideas or components for our design included a one-time-use balloon, a vibrating box, and real
+                audio.
             </p>
         </div>
 
         <div class="proj-code">
             <h3>Code for Hub A</h3>
-            <pre><code>
-                # Hub A setup: Medium Motor on port A; Hub B listens for "!F".
+<pre><code># Hub A setup: Medium Motor on port A; Hub B listens for "!F".
 from spikecomm import Beacon
 from hub import port, sound
 import runloop
@@ -106,7 +137,7 @@ async def return_home():
     # Leave a short pause before the motor moves back.
     await runloop.sleep_ms(RETURN_DELAY_MS)
     await motor.run_to_absolute_position(port.A, HOME_ANGLE, RETURN_SPEED)
-  
+
 async def handle_pull():
     broadcast_fire_state(1)
     print("Pull detected: broadcast 1")
@@ -120,14 +151,14 @@ async def watch_for_pulls():
     while True:
         current_position = motor.relative_position(port.A)
 
-        if abs(current_position - home_position) >= PULL_THRESHOLD:
+        if abs(current_position - home_position) &gt;= PULL_THRESHOLD:
             await handle_pull()
             home_position = motor.relative_position(port.A)
 
             # Hub B must see 0 before it can accept another 1.
             broadcast_fire_state(0)
             time_since_ready_broadcast_ms = 0
-        elif time_since_ready_broadcast_ms >= READY_BROADCAST_INTERVAL_MS:
+        elif time_since_ready_broadcast_ms &gt;= READY_BROADCAST_INTERVAL_MS:
             broadcast_fire_state(0)
             time_since_ready_broadcast_ms = 0
 
@@ -138,15 +169,12 @@ async def main():
     await return_home()
     await watch_for_pulls()
 
-runloop.run(main())
-
-            </code></pre>
-        </div> 
+runloop.run(main())</code></pre>
+        </div>
 
         <div class="proj-code">
             <h3>Code for Hub B</h3>
-            <pre><code>
-                # Hub B setup: gate motors on ports E and F.
+<pre><code># Hub B setup: gate motors on ports E and F.
 # Hub A broadcasts 0 when ready and 1 when a pull is detected.
 from spikecomm import Scanner
 from hub import port
@@ -191,7 +219,7 @@ async def wait_for_pull():
 
 async def move_gate(degrees):
     # Both gate motors move together; the sign selects open or close.
-    if degrees > 0:
+    if degrees &gt; 0:
         gate_speed = GATE_SPEED
     else:
         gate_speed = -GATE_SPEED
@@ -205,15 +233,15 @@ async def click_button():
 
 async def run_gate_sequence():
     motor_pair.pair(motor_pair.PAIR_1, port.E, port.F)
-  
+
     await move_gate(GATE_ANGLE)
     await click_button()
-  
+
     await runloop.sleep_ms(WAIT_TIME_MS)
-  
+
     await move_gate(-GATE_ANGLE)
     await click_button()
-  
+
     motor_pair.unpair(motor_pair.PAIR_1)
 
 async def main():
@@ -234,8 +262,7 @@ async def main():
         gate_busy = False
         print("Gate closed; waiting for 0, then 1")
 
-runloop.run(main())
-            </code></pre>
+runloop.run(main())</code></pre>
         </div>
 
     </div>
