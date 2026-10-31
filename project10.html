@@ -82,7 +82,8 @@
 
         <div class="proj-code">
             <h3>Code for Hub A</h3>
-            <pre><code># Hub A setup: Medium Motor on port A; Hub B listens for "!F".
+            <pre><code>
+                # Hub A setup: Medium Motor on port A; Hub B listens for "!F".
 from spikecomm import Beacon
 from hub import port, sound
 import runloop
@@ -105,7 +106,7 @@ async def return_home():
     # Leave a short pause before the motor moves back.
     await runloop.sleep_ms(RETURN_DELAY_MS)
     await motor.run_to_absolute_position(port.A, HOME_ANGLE, RETURN_SPEED)
-
+  
 async def handle_pull():
     broadcast_fire_state(1)
     print("Pull detected: broadcast 1")
@@ -119,14 +120,14 @@ async def watch_for_pulls():
     while True:
         current_position = motor.relative_position(port.A)
 
-        if abs(current_position - home_position) &gt;= PULL_THRESHOLD:
+        if abs(current_position - home_position) >= PULL_THRESHOLD:
             await handle_pull()
             home_position = motor.relative_position(port.A)
 
             # Hub B must see 0 before it can accept another 1.
             broadcast_fire_state(0)
             time_since_ready_broadcast_ms = 0
-        elif time_since_ready_broadcast_ms &gt;= READY_BROADCAST_INTERVAL_MS:
+        elif time_since_ready_broadcast_ms >= READY_BROADCAST_INTERVAL_MS:
             broadcast_fire_state(0)
             time_since_ready_broadcast_ms = 0
 
@@ -139,18 +140,103 @@ async def main():
 
 runloop.run(main())
 
+            </code></pre>
+        </div> 
 
-
-
-</code></pre>
-        </div>
-
-        <!-- Add Hub B's code here, using the same pattern. Remove the comment markers when it's ready.
         <div class="proj-code">
             <h3>Code for Hub B</h3>
-            <pre><code># paste Hub B's code here (use &gt; for &gt; and &lt; for &lt;)</code></pre>
+            <pre><code>
+                # Hub B setup: gate motors on ports E and F.
+# Hub A broadcasts 0 when ready and 1 when a pull is detected.
+from spikecomm import Scanner
+from hub import port
+import runloop
+import motor
+import motor_pair
+
+# Original values in the comments
+GATE_SPEED = 495
+GATE_ANGLE = 80 # 55
+WAIT_TIME_MS = 5000 # 5000
+CHECK_INTERVAL_MS = 20
+D_MOTOR_SPEED = 660
+
+fire_received = False
+armed = False
+gate_busy = False
+
+def on_fire(values):
+    global fire_received, armed
+
+    # Ignore messages while the gate moves, and reject unexpected formats.
+    if gate_busy or len(values) != 1:
+        return
+
+    if values[0] == 0:
+        # A ready message permits the next pull to trigger the gate.
+        armed = True
+    elif values[0] == 1 and armed:
+        # Disarm immediately so repeated reports of 1 cannot retrigger it.
+        armed = False
+        fire_received = True
+        print("Pull signal accepted")
+
+async def wait_for_pull():
+    global fire_received
+
+    while not fire_received:
+        await runloop.sleep_ms(CHECK_INTERVAL_MS)
+
+    fire_received = False
+
+async def move_gate(degrees):
+    # Both gate motors move together; the sign selects open or close.
+    if degrees > 0:
+        gate_speed = GATE_SPEED
+    else:
+        gate_speed = -GATE_SPEED
+
+    await motor_pair.move_tank_for_degrees(
+        motor_pair.PAIR_1, abs(degrees), gate_speed, gate_speed
+    )
+async def click_button():
+    await motor.run_for_degrees(port.D, 55, D_MOTOR_SPEED)
+    await motor.run_for_degrees(port.D, -55, D_MOTOR_SPEED)
+
+async def run_gate_sequence():
+    motor_pair.pair(motor_pair.PAIR_1, port.E, port.F)
+  
+    await move_gate(GATE_ANGLE)
+    await click_button()
+  
+    await runloop.sleep_ms(WAIT_TIME_MS)
+  
+    await move_gate(-GATE_ANGLE)
+    await click_button()
+  
+    motor_pair.unpair(motor_pair.PAIR_1)
+
+async def main():
+    global armed, gate_busy
+
+    scanner = Scanner("!F")
+    scanner.listen(on_fire)
+    print("Waiting for 0, then 1")
+
+    while True:
+        await wait_for_pull()
+
+        gate_busy = True
+        await run_gate_sequence()
+
+        # Require a ready message received after the gate closes.
+        armed = False
+        gate_busy = False
+        print("Gate closed; waiting for 0, then 1")
+
+runloop.run(main())
+            </code></pre>
         </div>
-        -->
 
     </div>
     <!-- End Project Information -->
