@@ -8,34 +8,152 @@
 </head>
 <body>
 
+    <!-- Header and Navigation Section -->
     <header class="header">
         <nav class="navbar">
             <a href="./index.html" class="active">Home</a>
         </nav>
     </header>
 
+    <!-- Project Information -->
     <div class="proj-container">
+
         <h1 class="proj-header">Project Portfolio</h1>
+
+        <!-- Add a hero image of the finished haunted house project here, like your other project pages -->
+
         <h2 class="proj-header">Project 10: Haunted House</h2>
 
         <div class="proj-desc">
+
+            <div class="at-a-glance">
+                <p><strong>At a glance</strong></p>
+                <p><strong>Goal:</strong> Create an interactive Halloween haunted house feature.</p>
+                <p><strong>Result:</strong> A bait-scare contraption that uses hub-to-hub communication, with a light-up toy skull as the scare.</p>
+                <p><strong>Key takeaway:</strong> Balloons were not repeatable and the motors' torque was not strong enough for the rotating plates, which led to the light-up skull.</p>
+            </div>
+
             <h3>Prepping for the Haunted House</h3>
             <p>
-                Four options: Cardboard and Craft Creations,
-                Scissor Lifts, Pulley and Drops, or Hub-to-Hub Communication. I chose
-                Cardboard and Craft Creations.
+                There were four options: Cardboard and Craft Creations, Scissor Lifts, Pulley and Drops, or
+                Hub-to-Hub Communication. I chose Cardboard and Craft Creations.
             </p>
+
+            <!-- Add your coffin photo here:
+            <div class="proj-img-container">
+                <img src="./projectimages/..." alt="Cardboard coffin design">
+                <p><em>Coffin design</em></p>
+            </div>
+            -->
+
             <p>
-                I tried to make a coffin that opens and closes, but I ran out of time.
+                I designed a coffin. I ran out of class time to attach the hinges.
             </p>
 
-            <figure class="proj-img-container">
-                <figcaption>Image to be added</figcaption>
-            </figure>
+            <h3>The Challenge</h3>
+            <p>
+                For our haunted house project, we built a bait-scare contraption. I worked with Isaac and Kerem.
+            </p>
 
-            <p><em>image here</em></p>
+            <h3>Design Process</h3>
+
+            <h4>The concept: Bait and hub-to-hub communication</h4>
+            <p>
+                Our initial ideas were to use some sort of bait, and we would use hub-to-hub communication to
+                broadcast a signal to another hub (Hub B) that would act as the main hub for our scaring mechanism.
+            </p>
+
+            <h4>Idea 1: Balloons</h4>
+            <p>
+                We thought about using balloons, but they were not repeatable.
+            </p>
+
+            <h4>Idea 2: Rotating plates</h4>
+            <p>
+                We also thought about using two plates to rotate, slamming against each other to make a crackle
+                (the motors' torque wasn't strong enough).
+            </p>
+
+            <h4>Final design: Light-up toy skull</h4>
+            <p>
+                Eventually, we settled on using one of the toy skulls that light up.
+            </p>
         </div>
+
+        <div class="proj-code">
+            <h3>Code for Hub A</h3>
+            <pre><code># Hub A setup: Medium Motor on port A; Hub B listens for "!F".
+from spikecomm import Beacon
+from hub import port, sound
+import runloop
+import motor
+
+HOME_ANGLE = 180
+PULL_THRESHOLD = 15
+RETURN_SPEED = 1050
+RETURN_DELAY_MS = 300
+CHECK_INTERVAL_MS = 20
+READY_BROADCAST_INTERVAL_MS = 100
+
+fire_beacon = Beacon("!F")
+
+def broadcast_fire_state(value):
+    # The message protocol is 0 = ready, 1 = pull detected.
+    fire_beacon.broadcast(value)
+
+async def return_home():
+    # Leave a short pause before the motor moves back.
+    await runloop.sleep_ms(RETURN_DELAY_MS)
+    await motor.run_to_absolute_position(port.A, HOME_ANGLE, RETURN_SPEED)
+
+async def handle_pull():
+    broadcast_fire_state(1)
+    print("Pull detected: broadcast 1")
+    await return_home()
+
+async def watch_for_pulls():
+    # Measure each pull from the position reached after the last return.
+    home_position = motor.relative_position(port.A)
+    time_since_ready_broadcast_ms = READY_BROADCAST_INTERVAL_MS
+
+    while True:
+        current_position = motor.relative_position(port.A)
+
+        if abs(current_position - home_position) &gt;= PULL_THRESHOLD:
+            await handle_pull()
+            home_position = motor.relative_position(port.A)
+
+            # Hub B must see 0 before it can accept another 1.
+            broadcast_fire_state(0)
+            time_since_ready_broadcast_ms = 0
+        elif time_since_ready_broadcast_ms &gt;= READY_BROADCAST_INTERVAL_MS:
+            broadcast_fire_state(0)
+            time_since_ready_broadcast_ms = 0
+
+        await runloop.sleep_ms(CHECK_INTERVAL_MS)
+        time_since_ready_broadcast_ms += CHECK_INTERVAL_MS
+
+async def main():
+    await return_home()
+    await watch_for_pulls()
+
+runloop.run(main())
+
+
+
+
+</code></pre>
+        </div>
+
+        <!-- Add Hub B's code here, using the same pattern. Remove the comment markers when it's ready.
+        <div class="proj-code">
+            <h3>Code for Hub B</h3>
+            <pre><code># paste Hub B's code here (use &gt; for &gt; and &lt; for &lt;)</code></pre>
+        </div>
+        -->
+
     </div>
+    <!-- End Project Information -->
 
 </body>
 </html>
