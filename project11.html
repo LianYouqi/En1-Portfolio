@@ -20,12 +20,182 @@
 
         <h1 class="proj-header">Project Portfolio</h1>
 
-        <!-- Add the project hero image here when one is available. -->
+        <div class="proj-img-container">
+            <img src="./projectimages/project11%20High%20or%20Low/Project%2011%20Front%20cover.jpeg" alt="Front cover for the High or Low supervised machine learning project">
+        </div>
 
         <h2 class="proj-header">Project 11: High or Low (Supervised Machine Learning)</h2>
 
         <div class="proj-desc">
-            <p>Project details coming soon.</p>
+            <p><em>November 2, 2026</em></p>
+
+            <div class="at-a-glance">
+                <p><strong>At a glance</strong></p>
+                <p><strong>Goal:</strong> Build a device that uses supervised classification to identify &ldquo;high&rdquo; vs. &ldquo;low&rdquo; heights.</p>
+                <p><strong>Result:</strong> A device that stores distance sensor and motor position pairs, then uses the K-nearest-neighbor algorithm (K = 3) to point the motor at the matching position.</p>
+            </div>
+
+            <h3>The Challenge</h3>
+            <p>
+                Build a device that uses supervised classification to identify &ldquo;high&rdquo; vs. &ldquo;low&rdquo; heights,
+                learning from stored distance sensor and motor position pairs and then using the nearest neighbor to point
+                the motor at the matching label.
+            </p>
+
+            <h3>How It Works</h3>
+
+            <h4>The hardware</h4>
+            <p>
+                In this project, I implemented the K-nearest-neighbor algorithm to classify between &ldquo;high&rdquo; and
+                &ldquo;low&rdquo; heights. My robot uses a force sensor, a medium motor, a distance sensor, and the buttons
+                on the hub. The medium motor is responsible for labeling the distance data points that the distance sensor
+                gathers. The more I turned the motor to the right, the closer the object is to my robot, and vice versa.
+            </p>
+        </div>
+
+        <div class="proj-split">
+            <div class="proj-img-container">
+                <img src="./projectimages/project11%20High%20or%20Low/Back.jpeg" alt="Back of the High or Low project">
+                <p><em>Back view</em></p>
+            </div>
+
+            <div class="proj-img-container">
+                <img src="./projectimages/project11%20High%20or%20Low/Side.jpeg" alt="Side view of the High or Low project">
+                <p><em>Side view</em></p>
+            </div>
+        </div>
+
+        <div class="proj-desc">
+            <h4>Training mode</h4>
+            <p>
+                I programmed the force sensor to gather the data. Pressing it with more than 6 N saves the current distance
+                reading together with the motor's angle as one data point, and then the medium motor returns to the
+                absolute position (0&deg;).
+            </p>
+
+            <h4>Prediction mode</h4>
+            <p>
+                Next, pressing either arrow button on the hub transitions the robot into prediction mode. The robot reads the
+                distance sensor, finds the three saved data points with the closest distances, averages their motor angles,
+                and turns the medium motor to that angle. Pressing either arrow button again returns the robot to training
+                mode, and the saved data points are kept.
+            </p>
+        </div>
+
+        <!-- Add the demo video here when it's ready. Remove the comment markers and replace VIDEO_ID.
+        <div class="proj-desc">
+            <h3>Demo Video</h3>
+        </div>
+        <div class="proj-video-container">
+            <iframe src="https://www.youtube.com/embed/VIDEO_ID" title="High or Low demonstration" allowfullscreen></iframe>
+        </div>
+        -->
+
+        <div class="proj-code">
+            <h3>High or Low Program Code</h3>
+            <pre><code># Setup: Distance Sensor on C, Force Sensor on B, motor on E.
+from hub import port, button
+import runloop
+import motor
+import distance_sensor
+import force_sensor
+
+RETURN_SPEED = 300       # Degrees per second.
+PREDICTION_SPEED = 300   # Degrees per second.
+NEIGHBOR_COUNT = 3
+FORCE_THRESHOLD = 60     # Decinewtons: 60 = 6 N.
+
+def predict_motor_position(distance_mm, training_samples):
+    # Find how far each saved distance is from the current reading.
+    nearby_samples = []
+    for saved_distance, saved_angle in training_samples:
+        difference = abs(saved_distance - distance_mm)
+        nearby_samples.append((difference, saved_angle))
+
+    # Put the closest samples first, then average their angles.
+    nearby_samples.sort()
+    samples_to_use = min(NEIGHBOR_COUNT, len(nearby_samples))
+    angle_total = 0
+    for index in range(samples_to_use):
+        angle_total += nearby_samples[index][1]
+
+    return round(angle_total / samples_to_use)
+
+async def main():
+    training_samples = []
+    training_mode = True
+    was_above_threshold = False
+
+    # Move to absolute 0° before the first training sample.
+    await motor.run_to_absolute_position(port.E, 0, RETURN_SPEED)
+    print("Training mode: apply more than 6 N to save a sample.")
+
+    while True:
+        # Either arrow button changes modes. Wait for release so one press
+        # cannot immediately switch back again.
+        if button.pressed(button.LEFT) or button.pressed(button.RIGHT):
+            if training_mode and not training_samples:
+                print("Save at least one sample before prediction mode.")
+            else:
+                training_mode = not training_mode
+
+                if training_mode:
+                    print("Training mode: existing samples are kept.")
+                else:
+                    print("Prediction mode. Samples:", training_samples)
+
+            while button.pressed(button.LEFT) or button.pressed(button.RIGHT):
+                await runloop.sleep_ms(20)
+
+            # Require a fresh force press when entering training mode.
+            was_above_threshold = (
+                force_sensor.force(port.B) &gt; FORCE_THRESHOLD
+            )
+
+        if training_mode:
+            # Save once when force crosses above 60 decinewtons.
+            is_above_threshold = force_sensor.force(port.B) &gt; FORCE_THRESHOLD
+
+            if is_above_threshold and not was_above_threshold:
+                distance_mm = distance_sensor.distance(port.C)
+
+                # Do not save a sample without a valid distance reading.
+                if distance_mm != -1:
+                    motor_degrees = motor.absolute_position(port.E)
+                    training_samples.append((distance_mm, motor_degrees))
+                    print("Saved:", distance_mm, "mm,",
+                          motor_degrees, "degrees")
+
+                    # Return to absolute 0° after saving.
+                    await motor.run_to_absolute_position(
+                        port.E, 0, RETURN_SPEED
+                    )
+                else:
+                    print("No valid distance. Move over an object and try again.")
+
+            was_above_threshold = is_above_threshold
+
+        else:
+            # Predict an angle from the closest saved distances.
+            distance_mm = distance_sensor.distance(port.C)
+
+            if distance_mm != -1:
+                predicted_angle = predict_motor_position(
+                    distance_mm, training_samples
+                )
+
+                # Move only when more than 3° away from the target.
+                if abs(motor.absolute_position(port.E) - predicted_angle) &gt; 3:
+                    print("Distance:", distance_mm, "mm; predicted angle:",
+                          predicted_angle, "degrees")
+                    await motor.run_to_absolute_position(
+                        port.E, predicted_angle, PREDICTION_SPEED
+                    )
+
+        # Give the buttons and sensors time to update.
+        await runloop.sleep_ms(20)
+
+runloop.run(main())</code></pre>
         </div>
 
     </div>
