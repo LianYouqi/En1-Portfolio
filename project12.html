@@ -20,12 +20,230 @@
 
         <h1 class="proj-header">Project Portfolio</h1>
 
-        <!-- Add the project hero image here when one is available. -->
+        <!-- Add the hero image of the finished scanner here:
+        <div class="proj-img-container">
+            <img src="./projectimages/project12%20Fruit%20Scanner/FILENAME.jpeg" alt="Fruit scanner built with a color sensor">
+        </div>
+        -->
 
         <h2 class="proj-header">Project 12: Fruit Scanner</h2>
 
         <div class="proj-desc">
-            <p>Project details coming soon.</p>
+            <!-- Add the date here, for example: <p><em>November 9, 2026</em></p> -->
+
+            <div class="at-a-glance">
+                <p><strong>At a glance</strong></p>
+                <p><strong>Goal:</strong> Build a scanner that scans different fruits using color sensors.</p>
+                <!-- <p><strong>Result:</strong> One sentence on what your scanner did, for example which fruits it could identify.</p> -->
+                <!-- <p><strong>Key takeaway:</strong> One sentence on what you learned.</p> -->
+            </div>
+
+            <h3>The Challenge</h3>
+            <p>
+                Build a scanner that scans different fruits using color sensors.
+            </p>
+
+            <h3>Design Process</h3>
+            <p>
+                My fruit sensor consisted of a medium motor, a force sensor, and a color sensor. In this project, I did
+                not utilize the color retrieval function of the color sensor; instead, I used supervised classification
+                machine learning. The force sensor is the input for the data collection. It collects the hex code of the
+                color that the color sensor is sensing. The degree of how much the motor has rotated is the label for
+                each data point.
+            </p>
+            <p>
+                Some other components that I implemented include a portable style that fits in one hand, a force sensor
+                attached on the right side for righties, a hub that displays what it thinks the object is, and the right
+                arrow on the hub to erase all data points.
+            </p>
+
+            <h3>Results</h3>
+            <p>
+                There is only so much you can do on this SPIKE Prime kit hub. Because of the limitations, this whole
+                program essentially detects how similar a color is to another color that I have manually labeled
+                "Apples" or "Bananas". While the goal was to build a fruit detector, that is almost impossible with the
+                specs of the LEGO SPIKE Prime kit. It was more of exploring machine learning algorithms, in this case
+                K-nearest-neighbors in 3 dimensions, and that was quite fun!
+            </p>
+        </div>
+
+        <!-- Add photos where the text talks about them. Two photos side by side:
+        <div class="proj-split">
+            <div class="proj-img-container">
+                <img src="./projectimages/project12%20Fruit%20Scanner/FILENAME1.jpeg" alt="Describe photo 1">
+                <p><em>Caption 1</em></p>
+            </div>
+            <div class="proj-img-container">
+                <img src="./projectimages/project12%20Fruit%20Scanner/FILENAME2.jpeg" alt="Describe photo 2">
+                <p><em>Caption 2</em></p>
+            </div>
+        </div>
+        -->
+
+        <!-- Add the demo video here. Replace VIDEO_ID:
+        <div class="proj-desc">
+            <h3>Demo Video</h3>
+        </div>
+        <div class="proj-video-container">
+            <iframe src="https://www.youtube.com/embed/VIDEO_ID" title="Fruit scanner demonstration" allowfullscreen></iframe>
+        </div>
+        -->
+
+        <div class="proj-code">
+            <h3>Fruit Scanner Code</h3>
+<pre><code># Setup: medium motor on A, Force Sensor on B, Color Sensor on E.
+from hub import port, button, light_matrix
+import runloop
+import motor
+import force_sensor
+import color_sensor
+
+FORCE_THRESHOLD = 60   # Decinewtons: 60 = 6 N.
+MOTOR_SPEED = 300       # Degrees per second.
+APPLE_ANGLE = 90        # Prediction target within the apple range.
+BANANA_ANGLE = -90      # Prediction target within the banana range.
+
+async def main():
+    # Store each sample's hex color, RGB readings, and object label.
+    training_samples = []
+    training_mode = True
+    was_above_threshold = False
+    displayed_label = None
+
+    # Move to absolute 0° once, before training begins.
+    await motor.run_to_absolute_position(port.A, 0, MOTOR_SPEED)
+    print("Training: turn the motor, then press the Force Sensor.")
+
+    while True:
+        # The right arrow deletes all samples and returns to training mode.
+        if button.pressed(button.RIGHT):
+            training_samples = []
+            training_mode = True
+            displayed_label = None
+            light_matrix.clear()
+            print("All samples deleted. Training mode.")
+
+            # Wait for release so one press resets only once.
+            while button.pressed(button.RIGHT):
+                await runloop.sleep_ms(20)
+
+            # Require a fresh Force Sensor press before saving.
+            was_above_threshold = (
+                force_sensor.force(port.B) &gt; FORCE_THRESHOLD
+            )
+
+        # The left arrow switches between training and prediction.
+        elif button.pressed(button.LEFT):
+            if training_mode and not training_samples:
+                print("Save at least one sample first.")
+            else:
+                training_mode = not training_mode
+
+                if training_mode:
+                    light_matrix.clear()
+                    print("Training mode. Existing samples are kept.")
+                else:
+                    displayed_label = None
+                    print("Prediction mode. Samples:", training_samples)
+
+            # Wait for release so one press switches modes only once.
+            while button.pressed(button.LEFT):
+                await runloop.sleep_ms(20)
+
+            # Require a fresh Force Sensor press after switching modes.
+            was_above_threshold = (
+                force_sensor.force(port.B) &gt; FORCE_THRESHOLD
+            )
+
+        if training_mode:
+            # Save once when force first rises above 6 N.
+            is_above_threshold = force_sensor.force(port.B) &gt; FORCE_THRESHOLD
+
+            if is_above_threshold and not was_above_threshold:
+                # Read the object's RGB values and the motor's absolute angle.
+                red, green, blue, intensity = color_sensor.rgbi(port.E)
+                motor_angle = motor.absolute_position(port.A)
+
+                # Assign a label from the motor angle.
+                if 0 &lt; motor_angle &lt; 180:
+                    object_label = "APPLE"
+                elif 180 &lt;= motor_angle &lt;= 360:
+                    object_label = "BANANA"
+                elif -180 &lt;= motor_angle &lt;= 0:
+                    object_label = "BANANA"
+                elif -360 &lt;= motor_angle &lt; -180:
+                    object_label = "APPLE"
+                else:
+                    object_label = None
+                    print("Angle must be between -360 and 360 degrees.")
+
+                if object_label is not None:
+                    # Scale values only if needed for a #RRGGBB code.
+                    # Keep the original RGB readings for predictions.
+                    largest_channel = max(red, green, blue)
+                    if largest_channel &gt; 255:
+                        hex_red = red * 255 // largest_channel
+                        hex_green = green * 255 // largest_channel
+                        hex_blue = blue * 255 // largest_channel
+                    else:
+                        hex_red = red
+                        hex_green = green
+                        hex_blue = blue
+
+                    hex_color = "#{:02X}{:02X}{:02X}".format(
+                        hex_red, hex_green, hex_blue
+                    )
+                    training_samples.append(
+                        (hex_color, red, green, blue, object_label)
+                    )
+                    print("Saved:", hex_color, object_label,
+                          "at", motor_angle, "degrees")
+
+                    # Saving a sample does not move the motor.
+
+            was_above_threshold = is_above_threshold
+
+        else:
+            # Read the current object's RGB values.
+            red, green, blue, intensity = color_sensor.rgbi(port.E)
+
+            # Predict the label of the closest saved RGB reading.
+            closest_difference = None
+            predicted_label = None
+
+            for saved_hex, saved_red, saved_green, saved_blue, saved_label in training_samples:
+                difference = (
+                    (red - saved_red) ** 2
+                    + (green - saved_green) ** 2
+                    + (blue - saved_blue) ** 2
+                )
+
+                if closest_difference is None or difference &lt; closest_difference:
+                    closest_difference = difference
+                    predicted_label = saved_label
+
+            # Choose a motor target for the predicted object.
+            if predicted_label == "APPLE":
+                target_angle = APPLE_ANGLE
+            else:
+                target_angle = BANANA_ANGLE
+
+            # Display the prediction when it changes.
+            if predicted_label != displayed_label:
+                displayed_label = predicted_label
+                print("Prediction:", predicted_label)
+                await light_matrix.write(predicted_label)
+
+            # Move the motor only if it is away from the target.
+            if abs(motor.absolute_position(port.A) - target_angle) &gt; 3:
+                await motor.run_to_absolute_position(
+                    port.A, target_angle, MOTOR_SPEED
+                )
+
+        # Give the buttons and sensors time to update.
+        await runloop.sleep_ms(20)
+
+runloop.run(main())</code></pre>
         </div>
 
     </div>
