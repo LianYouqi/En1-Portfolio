@@ -32,7 +32,7 @@
             <div class="at-a-glance">
                 <p><strong>At a glance</strong></p>
                 <p><strong>Goal:</strong> Build a scanner that scans different fruits using color sensors.</p>
-                <p><strong>Result:</strong> A scanner that classifies between apples and bananas</p>
+                <p><strong>Result:</strong> A scanner that classifies between apples and bananas.</p>
             </div>
 
             <h3>The Challenge</h3>
@@ -105,12 +105,75 @@ MOTOR_SPEED = 300       # Degrees per second.
 APPLE_ANGLE = 90        # Prediction target within the apple range.
 BANANA_ANGLE = -90      # Prediction target within the banana range.
 
+K_NEIGHBORS = 3         # How many nearest samples get a vote.
+AVERAGE_COUNT = 5       # Sensor readings averaged into one reading.
+STABLE_READINGS = 3     # A new label must win this many times in a row.
+
+
+async def read_rgb_averaged(count=AVERAGE_COUNT):
+    # Average several readings to reduce sensor noise.
+    total_red = 0
+    total_green = 0
+    total_blue = 0
+    for _ in range(count):
+        red, green, blue, intensity = color_sensor.rgbi(port.E)
+        total_red += red
+        total_green += green
+        total_blue += blue
+        await runloop.sleep_ms(10)
+    return total_red // count, total_green // count, total_blue // count
+
+
+def classify_knn(red, green, blue, samples, k):
+    # Squared distance to every saved sample. The square root is skipped
+    # because it does not change which samples are nearest.
+    distances = []
+    for saved_hex, saved_red, saved_green, saved_blue, saved_label in samples:
+        difference = (
+            (red - saved_red) ** 2
+            + (green - saved_green) ** 2
+            + (blue - saved_blue) ** 2
+        )
+        distances.append((difference, saved_label))
+
+    # Sort from nearest to farthest and keep the k nearest.
+    distances.sort()
+    k = min(k, len(distances))
+    nearest = distances[:k]
+
+    # Each neighbor votes for its label.
+    apple_votes = 0
+    banana_votes = 0
+    for difference, label in nearest:
+        if label == "APPLE":
+            apple_votes += 1
+        else:
+            banana_votes += 1
+
+    if apple_votes &gt; banana_votes:
+        winner = "APPLE"
+    elif banana_votes &gt; apple_votes:
+        winner = "BANANA"
+    else:
+        # Tie (possible when fewer than k samples exist): trust the closest.
+        winner = nearest[0][1]
+
+    return winner, apple_votes, banana_votes
+
+
+def angle_error(current, target):
+    # Smallest difference between two angles, correct for 0-359 or -180-180.
+    return (current - target + 180) % 360 - 180
+
+
 async def main():
     # Store each sample's hex color, RGB readings, and object label.
     training_samples = []
     training_mode = True
     was_above_threshold = False
     displayed_label = None
+    pending_label = None
+    pending_count = 0
 
     # Move to absolute 0° once, before training begins.
     await motor.run_to_absolute_position(port.A, 0, MOTOR_SPEED)
@@ -122,6 +185,8 @@ async def main():
             training_samples = []
             training_mode = True
             displayed_label = None
+            pending_label = None
+            pending_count = 0
             light_matrix.clear()
             print("All samples deleted. Training mode.")
 
@@ -140,12 +205,18 @@ async def main():
                 print("Save at least one sample first.")
             else:
                 training_mode = not training_mode
+                displayed_label = None
+                pending_label = None
+                pending_count = 0
 
                 if training_mode:
                     light_matrix.clear()
                     print("Training mode. Existing samples are kept.")
                 else:
-                    displayed_label = None
+                    if len(training_samples) &lt; K_NEIGHBORS:
+                        print("Only", len(training_samples),
+                              "samples; k =", K_NEIGHBORS,
+                              "works best with more.")
                     print("Prediction mode. Samples:", training_samples)
 
             # Wait for release so one press switches modes only once.
@@ -163,84 +234,85 @@ async def main():
 
             if is_above_threshold and not was_above_threshold:
                 # Read the object's RGB values and the motor's absolute angle.
-                red, green, blue, intensity = color_sensor.rgbi(port.E)
+                red, green, blue = await read_rgb_averaged()
                 motor_angle = motor.absolute_position(port.A)
 
-                # Assign a label from the motor angle.
-                if 0 &lt; motor_angle &lt; 180:
-                    object_label = "APPLE"
-                elif 180 &lt;= motor_angle &lt;= 360:
-                    object_label = "BANANA"
-                elif -180 &lt;= motor_angle &lt;= 0:
-                    object_label = "BANANA"
-                elif -360 &lt;= motor_angle &lt; -180:
+                # Assign a label from the motor angle. The modulo makes this
+                # work for both 0-359 and -180-180 angle readings.
+                wrapped_angle = motor_angle % 360
+                if 0 &lt; wrapped_angle &lt; 180:
                     object_label = "APPLE"
                 else:
-                    object_label = None
-                    print("Angle must be between -360 and 360 degrees.")
+                    object_label = "BANANA"
 
-                if object_label is not None:
-                    # Scale values only if needed for a #RRGGBB code.
-                    # Keep the original RGB readings for predictions.
-                    largest_channel = max(red, green, blue)
-                    if largest_channel &gt; 255:
-                        hex_red = red * 255 // largest_channel
-                        hex_green = green * 255 // largest_channel
-                        hex_blue = blue * 255 // largest_channel
-                    else:
-                        hex_red = red
-                        hex_green = green
-                        hex_blue = blue
+                # Scale values only if needed for a #RRGGBB code.
+                # Keep the original RGB readings for predictions.
+                largest_channel = max(red, green, blue)
+                if largest_channel &gt; 255:
+                    hex_red = red * 255 // largest_channel
+                    hex_green = green * 255 // largest_channel
+                    hex_blue = blue * 255 // largest_channel
+                else:
+                    hex_red = red
+                    hex_green = green
+                    hex_blue = blue
 
-                    hex_color = "#{:02X}{:02X}{:02X}".format(
-                        hex_red, hex_green, hex_blue
-                    )
-                    training_samples.append(
-                        (hex_color, red, green, blue, object_label)
-                    )
-                    print("Saved:", hex_color, object_label,
-                          "at", motor_angle, "degrees")
+                hex_color = "#{:02X}{:02X}{:02X}".format(
+                    hex_red, hex_green, hex_blue
+                )
+                training_samples.append(
+                    (hex_color, red, green, blue, object_label)
+                )
+                print("Saved:", hex_color, object_label,
+                      "at", motor_angle, "degrees")
 
-                    # Saving a sample does not move the motor.
+                # Saving a sample does not move the motor.
 
             was_above_threshold = is_above_threshold
 
         else:
-            # Read the current object's RGB values.
-            red, green, blue, intensity = color_sensor.rgbi(port.E)
+            # Read the current object's averaged RGB values.
+            red, green, blue = await read_rgb_averaged()
 
-            # Predict the label of the closest saved RGB reading.
-            closest_difference = None
-            predicted_label = None
+            # k-nearest neighbors: the k closest samples vote on the label.
+            candidate, apple_votes, banana_votes = classify_knn(
+                red, green, blue, training_samples, K_NEIGHBORS
+            )
 
-            for saved_hex, saved_red, saved_green, saved_blue, saved_label in training_samples:
-                difference = (
-                    (red - saved_red) ** 2
-                    + (green - saved_green) ** 2
-                    + (blue - saved_blue) ** 2
-                )
-
-                if closest_difference is None or difference &lt; closest_difference:
-                    closest_difference = difference
-                    predicted_label = saved_label
-
-            # Choose a motor target for the predicted object.
-            if predicted_label == "APPLE":
-                target_angle = APPLE_ANGLE
+            # Only switch labels after the new label wins several readings
+            # in a row, so one noisy reading cannot flip the prediction.
+            if candidate == displayed_label:
+                pending_label = None
+                pending_count = 0
             else:
-                target_angle = BANANA_ANGLE
+                if candidate == pending_label:
+                    pending_count += 1
+                else:
+                    pending_label = candidate
+                    pending_count = 1
 
-            # Display the prediction when it changes.
-            if predicted_label != displayed_label:
-                displayed_label = predicted_label
-                print("Prediction:", predicted_label)
-                await light_matrix.write(predicted_label)
+                if pending_count &gt;= STABLE_READINGS:
+                    displayed_label = candidate
+                    pending_label = None
+                    pending_count = 0
+                    print("Prediction:", displayed_label,
+                          "(votes: APPLE", apple_votes,
+                          "BANANA", banana_votes, ")")
+                    await light_matrix.write(displayed_label)
 
-            # Move the motor only if it is away from the target.
-            if abs(motor.absolute_position(port.A) - target_angle) &gt; 3:
-                await motor.run_to_absolute_position(
-                    port.A, target_angle, MOTOR_SPEED
-                )
+            # Move the motor only after a prediction has been confirmed,
+            # and only if it is away from the target.
+            if displayed_label is not None:
+                if displayed_label == "APPLE":
+                    target_angle = APPLE_ANGLE
+                else:
+                    target_angle = BANANA_ANGLE
+
+                current_angle = motor.absolute_position(port.A)
+                if abs(angle_error(current_angle, target_angle)) &gt; 3:
+                    await motor.run_to_absolute_position(
+                        port.A, target_angle, MOTOR_SPEED
+                    )
 
         # Give the buttons and sensors time to update.
         await runloop.sleep_ms(20)
